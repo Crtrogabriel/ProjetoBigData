@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Mapa | Análise Multivariada de Risco</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet"> 
+
+    <style>
+        html, body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #map { width: 100%; height: 100vh; z-index: 1; }
+        path.leaflet-interactive:focus { outline: none; }
+        
+        /* Sidebar */
+        #sidebar { 
+            color: rgb(0, 0, 0); 
+            position: absolute; 
+            top: 0; 
+            right: 0; 
+            width: 300px; 
+            height: 100%; 
+            background-color: #fffffe; 
+            z-index: 2000; /* Garante que fique acima do mapa */
+            padding: 15px; 
+            box-sizing: border-box; 
+            box-shadow: -4px 0 8px rgba(0,0,0,0.3); 
+            overflow-y: auto; 
+            transform: translateX(100%); 
+            transition: transform 0.3s ease-in-out; 
+            border-radius: 10px 0 0 10px; 
+        }
+        #sidebar.open { transform: translateX(0); }
+        
+        #close-sidebar { float: right; font-size: 20px; font-weight: bold; cursor: pointer; border: none; background: none; }
+        #chart-container { width: 100%; height: 250px; margin-top: 20px; }
+        .data-item { font-size: 0.9em; line-height: 1.4; }
+        
+        /* Seletor */
+        .map-selector-container { position: absolute; top: 83px; left: 10px; z-index: 1000; background-color: white; padding: 5px 10px; border-radius: 5px; border: 1px solid #ccc; }
+        .map-selector-container label { font-weight: bold; margin-right: 5px; }
+        
+        /* Legenda */
+        .legend { position: absolute; bottom: 30px; left: 10px; z-index: 1000; background-color: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 5px; line-height: 1.5; font-size: 0.9em; min-width: 140px; box-shadow: 0 0 5px rgba(0,0,0,0.3); }
+        .legend h4 { margin: 0 0 5px 0; text-align: center; }
+        .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.7; }
+        
+        .leaflet-grab .leaflet-interactive:hover { fill-opacity: 0.5; stroke-width: 2; stroke: #fff; }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    
+    <div id="sidebar">
+        <button id="close-sidebar" title="Fechar">&times;</button>
+        <div id="regional-title">
+            <h2>Dados da Regional</h2>
+            <p>Clique em uma Regional no mapa para ver os dados.</p>
+        </div>
+        <div id="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
+        
+        <div id="predicao-container" style="margin-top: 20px; padding: 10px; background-color: #f8d7da; border-radius: 5px; display: none; border-left: 4px solid #dc3545;">
+            <strong> Previsão do Modelo:</strong>
+            <p id="predicao-texto" style="font-size: 0.9em; margin: 5px 0 0 0; color: #333;"></p>
+        </div>
+
+        <p style="font-size: 0.8em; margin-top: 20px; color: #666;">
+            *Lixo: Contagem de demandas (Entulho/Poda).<br>
+            *Alagamento: Ocorrências diretas (2022).<br>
+            *Risco Geo: % da área em zonas de risco.<br>
+            *Drenagem: Densidade (Km/Km²).
+        </p>
+    </div>
+    
+    <div class="map-selector-container">
+        <label for="metric-select">Visualizar Camada:</label>
+        <select id="metric-select">
+            <option value="nenhum">-- Nenhum --</option>
+            <option value="cluster_risco">Risco Combinado (Cluster)</option> 
+            <option value="alagamento">Ocorrências de Alagamento</option>
+            <option value="lixo">Demandas de Lixo</option>
+            <option value="idh">IDH Médio (Invertido)</option>
+            <option value="risco_geo">% Risco Geográfico</option>
+            <option value="km_drenagem">Densidade Drenagem (Invertido)</option>
+        </select>
+    </div>
+
+    <script>
+      const map = L.map('map').setView([-3.78, -38.52], 11); 
+      
+      // Elementos da UI
+      const sidebar = document.getElementById('sidebar');
+      const closeButton = document.getElementById('close-sidebar');
+      const regionalTitle = document.getElementById('regional-title');
+      const predicaoContainer = document.getElementById('predicao-container');
+      const predicaoTexto = document.getElementById('predicao-texto');
+      
+      let currentChart = null;
+      let layerRegionais = null; 
+      let legend = null; 
+
+      // Base Layer
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+      closeButton.addEventListener('click', () => {
+          sidebar.classList.remove('open');
+      });
+
+      // --- Cores e Estilos ---
+      function getColorAlagamento(d) { return d > 20 ? '#800026' : d > 15 ? '#BD0026' : d > 10 ? '#E31A1C' : d > 5  ? '#FC4E2A' : d > 2  ? '#FD8D3C' : d > 0  ? '#FEB24C' : '#FFEDA0'; }
+      function getColorLixo(d) { return d > 1500 ? '#b30000' : d > 1000 ? '#e34a33' : d > 750  ? '#fc8d59' : d > 500  ? '#fdbb84' : d > 250  ? '#fdd49e' : d > 0    ? '#fef0d9' : '#ffffff'; }
+      function getColorIdh(d) { return d < 0.2 ? '#08306b' : d < 0.3 ? '#08519c' : d < 0.4 ? '#2171b3' : d < 0.5 ? '#4292c6' : d < 0.6 ? '#6baed6' : d < 0.7 ? '#9ecae1' : '#c6dbef'; }
+      function getColorRiscoGeo(d) { return d > 20 ? '#800026' : d > 15 ? '#BD0026' : d > 10 ? '#E31A1C' : d > 5 ? '#FC4E2A' : d > 0 ? '#FD8D3C' : '#FEB24C'; }   
+      function getColorDrenagem(d) { return d < 0.5 ? '#a63603' : d < 1.0 ? '#e6550d' : d < 1.5 ? '#fd8d3c' : d < 2.0 ? '#fdbe85' : d < 3.0 ? '#feedde' : '#ffffff'; }
+      function getColorCluster(d) { return d === 'Alto'  ? '#d73027' : d === 'Médio' ? '#fee08b' : d === 'Baixo' ? '#4575b4' : '#ffffff'; }
+
+      function getStyle(feature, metric) {
+          let value, color;
+          switch (metric) {
+              case 'alagamento': value = feature.properties.alagamento || 0; color = getColorAlagamento(value); break;
+              case 'lixo': value = feature.properties.lixo || 0; color = getColorLixo(value); break;
+              case 'idh': value = feature.properties.idh || 0; color = getColorIdh(value); break;
+              case 'risco_geo': value = feature.properties.risco_geo || 0; color = getColorRiscoGeo(value); break;
+              case 'km_drenagem': value = feature.properties.km_drenagem || 0; color = getColorDrenagem(value); break;
+              case 'cluster_risco': value = feature.properties.cluster_risco || 'N/A'; color = getColorCluster(value); break;
+              default: color = '#FFD700'; break;
+          }
+          return { color: "#444", weight: 1, fillOpacity: (metric === 'nenhum') ? 0.2 : 0.7, fillColor: color };
+      }
+
+      function updateLegend(metric) {
+          if (!legend) { 
+              legend = L.control({ position: 'bottomleft' });
+              legend.onAdd = function (map) { return L.DomUtil.create('div', 'legend'); };
+              legend.addTo(map);
+          }
+          const div = legend.getContainer();
+          div.innerHTML = ""; 
+          let grades = [], title = "", getColor;
+
+          switch (metric) {
+              case 'cluster_risco':
+                  div.innerHTML = `<h4>Risco Combinado</h4><i style="background:#d73027"></i> Risco Alto<br><i style="background:#fee08b"></i> Risco Médio<br><i style="background:#4575b4"></i> Risco Baixo<br>`;
+                  return; 
+              case 'alagamento': grades = [0, 2, 5, 10, 15, 20]; title = "Ocorr. Alagamento"; getColor = getColorAlagamento; break;
+              case 'lixo': grades = [0, 250, 500, 750, 1000, 1500]; title = "Demandas de Lixo"; getColor = getColorLixo; break;
+              case 'idh': grades = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2]; title = "IDH (Pior > Melhor)"; getColor = getColorIdh; break;
+              case 'risco_geo': grades = [0, 5, 10, 15, 20]; title = "% Risco Geográfico"; getColor = getColorRiscoGeo; break;
+              case 'km_drenagem': grades = [3.0, 2.0, 1.5, 1.0, 0.5]; title = "Densidade Drenagem"; getColor = getColorDrenagem; break;
+              default: div.innerHTML = "<h4>Selecione uma variável</h4>"; return;
+          }
+          div.innerHTML = `<h4>${title}</h4>`;
+          for (let i = 0; i < grades.length; i++) {
+              div.innerHTML += '<i style="background:' + getColor(grades[i] + (metric === 'idh' ? -0.01 : 0.01)) + '"></i> ' + grades[i] + (grades[i+1] ? '&ndash;' + grades[i+1] + '<br>' : '+');
+          }
+      }
+
+      // ==========================================================
+      // CARREGAMENTO E INTEGRAÇÃO
+      // ==========================================================
+
+      Promise.all([
+        fetch("/static/data/result.json").then(r => r.json()), 
+        fetch("/static/data/Secretarias_Executivas_Regionais.geojson").then(r => r.json()),
+        fetch("/static/data/Rios.geojson").then(r => r.json()),
+        fetch("/static/data/Canais.geojson").then(r => r.json()),
+        fetch("/static/data/Valas_e_Drenos.geojson").then(r => r.json()),
+        fetch("/static/data/Alagados.geojson").then(r => r.json()), 
+        fetch("/static/data/risco_geologico.json").then(r => r.json()), 
+        fetch("/static/data/inundacao_raster_corrected.geojson").then(r => r.json()) 
+      ]).then(([dados, regionais, rios, canais, valas, alagadosHistorico, riscoGeo, inundacaoRaster]) => {
+
+        // 1. Mapeamento de Dados
+        const dadosPorRegional = new Map(dados.map(d => [d.regiao, d]));
+        regionais.features.forEach(feature => {
+            const d = dadosPorRegional.get(feature.properties.regiao_adm);
+            if (d) {
+                // Injeta dados do JSON nas propriedades do GeoJSON
+                feature.properties.lixo = d.lixo;
+                feature.properties.alagamento = d.alagamento;
+                feature.properties.idh = d.idh;
+                feature.properties.risco_geo = d.risco_geo;
+                feature.properties.km_drenagem = d.densidade_drenagem;
+                feature.properties.cluster_risco = d.cluster;
+                feature.properties.predict = d.predict; // Texto da predição
+            }
+        });
+
+        // 2. Função Montar Popup (Detalhes do Risco)
+        function montarPopup(feature, titulo) {
+            const p = feature.properties;
+            // Tenta encontrar as chaves comuns nos seus arquivos
+            const grau = p.classe || p.grau_risco || p.GRAU || p.risco || 'Não classificado';
+            const tipo = p.tipolo_g1 || p.processo || p.TIPO || 'Geral';
+            const desc = p.descricao || p.obs || 'Sem descrição disponível.';
+            const local = p.local || p.bairro || '';
+
+            return `
+                <div style="font-family: Arial, sans-serif; min-width: 200px;">
+                    <h3 style="margin: 0 0 8px 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px;">${titulo}</h3>
+                    <p style="margin: 5px 0;"><b>Grau:</b> <span style="color: red; font-weight:bold;">${grau}</span></p>
+                    <p style="margin: 5px 0;"><b>Tipo:</b> ${tipo}</p>
+                    ${local ? `<p style="margin: 5px 0;"><b>Local:</b> ${local}</p>` : ''}
+                    <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 0.85em; border: 1px solid #eee; color: #555;">
+                        ${desc}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. Função Desenhar Sidebar (Dados da Regional)
+        function drawSidebar(nome, lixo, alagamento, idh, risco_geo, km_drenagem, cluster_risco, predict) { 
+            regionalTitle.innerHTML = `
+                <h2>${nome}</h2>
+                <div style="margin-bottom: 15px; padding: 10px; background: #f0f4f8; border-radius: 5px;">
+                    <p style="margin:0; font-size: 0.9em; color: #555;">Classificação de Risco:</p>
+                    <p style="margin:0; font-size: 1.4em; font-weight: bold; color: ${cluster_risco === 'Alto' ? '#d73027' : '#4575b4'}">${cluster_risco}</p>
+                </div>
+                
+                <p class="data-item"><b>IDH Médio:</b> ${idh}</p>
+                <p class="data-item"><b>Risco Geográfico:</b> ${risco_geo}% da área</p>
+                <p class="data-item"><b>Densidade Drenagem:</b> ${km_drenagem} km/km²</p>
+                <p class="data-item"><b>Demandas de Lixo:</b> ${lixo}</p>
+                <p class="data-item"><b>Ocorrências Reais:</b> ${alagamento}</p>
+            `;
+            
+            // Exibe a predição se existir
+            if (predict) {
+                predicaoContainer.style.display = 'block';
+                predicaoTexto.innerText = predict;
+            } else {
+                predicaoContainer.style.display = 'none';
+            }
+
+            if (currentChart) { currentChart.destroy(); }
+            
+            const ctx = document.getElementById("chart").getContext("2d");
+            currentChart = new Chart(ctx, {
+                type: "doughnut",
+                data: {
+                    labels: ["Lixo", "Alagamento"],
+                    datasets: [{
+                        data: [lixo, alagamento],
+                        backgroundColor: ['#ff6384', '#36a2eb'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+            sidebar.classList.add('open');
+        }
+
+        // 4. Camadas de Detalhe (Overlays)
+        const overlayMaps = {
+            "Rios": L.geoJSON(rios, { style: { color: "#0066cc", weight: 2 } }),
+            "Canais": L.geoJSON(canais, { style: { color: "#33ccff", weight: 2 } }),
+            "Valas e Drenos": L.geoJSON(valas, { style: { color: "#00cc66", weight: 2, dashArray: '5, 5' } }),
+            
+            "Pontos Históricos (2022)": L.geoJSON(alagadosHistorico, { 
+                pointToLayer: (feature, latlng) => L.circleMarker(latlng, { radius: 6, color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.6 }),
+                onEachFeature: (f, l) => l.bindPopup("<b>Ponto Histórico</b><br>Registro de alagamento em 2022.")
+            }),
+            
+            // Áreas de Risco (Com Popups)
+            "Áreas de Risco Geológico": L.geoJSON(riscoGeo, { 
+                style: { color: "#8B4513", weight: 1, fillColor: "#8B4513", fillOpacity: 0.6 },
+                onEachFeature: function(feature, layer) {
+                    layer.bindPopup(montarPopup(feature, "Risco Geológico"));
+                }
+            }),
+
+            "Mancha de Inundação": L.geoJSON(inundacaoRaster, { 
+                style: { color: "#00008B", weight: 0, fillColor: "#00008B", fillOpacity: 0.5 },
+                onEachFeature: function(feature, layer) {
+                    layer.bindPopup(montarPopup(feature, "Risco de Inundação"));
+                }
+            })
+        };
+
+        // 5. Camada Principal (Regionais)
+        layerRegionais = L.geoJSON(regionais, {
+          style: getStyle(null, 'nenhum'), 
+          onEachFeature: function(feature, layer) {
+            const nomeSER = feature.properties.regiao_adm; 
+            layer.bindTooltip(nomeSER, { direction: 'center', className: 'leaflet-tooltip-own' });
+
+            // Evento de clique na Regional
+            layer.on("click", (e) => {
+                // Linha Mágica: Impede que o clique na regional feche o sidebar ou propague errado
+                L.DomEvent.stopPropagation(e); 
+                
+                const r = feature.properties;
+                drawSidebar(nomeSER, r.lixo, r.alagamento, r.idh, r.risco_geo, r.km_drenagem, r.cluster_risco, r.predict);
+            });
+          }
+        }).addTo(map);
+
+        // Garante que as regionais fiquem no fundo para não cobrir os pontos de risco
+        layerRegionais.bringToBack();
+
+        L.control.layers(null, overlayMaps, { collapsed: false, position: 'topright' }).addTo(map);
+        map.fitBounds(layerRegionais.getBounds());
+
+        // Controle do Seletor
+        const metricSelect = document.getElementById('metric-select');
+        metricSelect.addEventListener('change', function() {
+            const selectedMetric = this.value;
+            layerRegionais.eachLayer(layer => {
+                layer.setStyle(getStyle(layer.feature, selectedMetric));
+            });
+            updateLegend(selectedMetric);
+        });
+        updateLegend('nenhum');
+
+      }).catch(error => {
+          console.error("Erro ao carregar dados:", error);
+          alert("Erro ao carregar os dados. Verifique o console.");
+      });
+    </script>
+</body>
+</html>
