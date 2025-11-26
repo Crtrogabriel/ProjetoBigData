@@ -3,157 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projeto Big Data - Alagamentos em Fortaleza</title>
+    <title>Apresentação | Análise de Risco Fortaleza</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;500&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
     <style>
-        /* (Todo o seu CSS permanece o mesmo) */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; background-color: #f4f4f4; }
-        .container { max-width: 900px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-        .nav { text-align: center; background-color: #333; padding: 10px 0; }
-        .nav a { margin: 0 20px; font-size: 1.2em; color: #fff; text-decoration: none; font-weight: bold; }
-        .nav a:hover { text-decoration: underline; }
-        h1, h2, h3 { color: #333; }
-        h2 { border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-top: 40px; }
-        p, li { color: #555; line-height: 1.6; }
-        .grafico-container { width: 100%; margin-top: 20px; padding: 15px; box-sizing: border-box; background-color: #fafafa; border: 1px solid #e0e0e0; border-radius: 5px; }
-        .grafico-container img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
-        .foto-container { margin-top: 20px; text-align: center; }
-        .foto-container img { max-width: 48%; margin: 1%; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
+        :root {
+            --primary: #2c3e50;
+            --accent: #e67e22;
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+        }
+
+        body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--bg); color: #333; line-height: 1.6; }
+        
+        /* Navegação */
+        .nav { background-color: var(--primary); padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .nav a { color: white; text-decoration: none; font-family: 'Oswald', sans-serif; font-size: 1.1em; margin: 0 20px; padding: 5px 10px; border-radius: 4px; transition: 0.3s; }
+        .nav a:hover { background-color: rgba(255,255,255,0.1); }
+        .nav a.cta { background-color: var(--accent); font-weight: bold; }
+
+        /* Layout */
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        
+        .header { text-align: center; margin-bottom: 60px; }
+        .header h1 { font-family: 'Oswald', sans-serif; font-size: 3em; margin-bottom: 10px; color: var(--primary); }
+        .header p { font-size: 1.2em; color: #666; max-width: 600px; margin: 0 auto; }
+
+        /* Seções de Apresentação */
+        .section { margin-bottom: 80px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
+        .section-title { font-family: 'Oswald', sans-serif; font-size: 2em; color: var(--primary); margin-bottom: 30px; display: flex; align-items: center; }
+        .section-title span { background: var(--primary); color: white; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.6em; margin-right: 15px; }
+
+        /* Grid Gráfico + Explicação */
+        .chart-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; align-items: center; }
+        
+        .chart-card { background: var(--card-bg); padding: 20px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); text-align: center; }
+        .chart-card img { max-width: 100%; height: auto; border-radius: 5px; }
+        
+        .guide-card { background: #fff; padding: 25px; border-left: 5px solid var(--accent); border-radius: 0 10px 10px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .guide-title { font-family: 'Oswald', sans-serif; color: var(--accent); font-size: 1.3em; margin-bottom: 15px; text-transform: uppercase; }
+        
+        .insight-box { margin-bottom: 20px; }
+        .insight-label { font-weight: bold; display: block; color: #555; font-size: 0.9em; text-transform: uppercase; margin-bottom: 5px; }
+
+        /* Footer */
+        .footer { text-align: center; margin-top: 50px; padding: 40px; background: var(--primary); color: white; }
+        
+        /* Ajuste para o Heatmap (que é quadrado) */
+        .heatmap-img { max-height: 500px; object-fit: contain; }
+
     </style>
 </head>
 <body>
+
     <div class="nav">
-        <a href="/">Apresentação</a>
-        <a href="/mapa">Mapa Interativo</a>
+        <a href="#inicio">Início</a>
+        <a href="#investigacao">1. Investigação</a>
+        <a href="#validacao">2. Validação</a>
+        <a href="#solucao">3. Solução</a>
+        <a href="/mapa" class="cta">ACESSAR MAPA INTERATIVO ➜</a>
     </div>
 
-    <div class="container">
+    <div class="container" id="inicio">
         <div class="header">
-            <h1>Análise Multivariada de Risco de Alagamento em Fortaleza</h1>
-        </div>
-        
-        <h2>Objetivo</h2>
-        <p>
-            O objetivo deste projeto é analisar os múltiplos fatores que contribuem para os alagamentos nas regionais de Fortaleza. 
-            A análise inicial, focada apenas na relação direta Lixo vs. Alagamento, mostrou-se inconclusiva.
-        </p>
-        <p>
-            Seguindo a recomendação de especialistas, enriquecemos o modelo com novas variáveis para criar um índice de risco mais completo, 
-            cruzando dados de 5 fontes distintas.
-        </p>
-
-        <h2>Evidências (Fotos)</h2>
-        <p>
-            (Aqui você pode adicionar as fotos de comprovação de lixo nas ruas e alagamentos. Basta salvar as fotos na pasta 
-            <code>static/images/</code> e referenciá-las abaixo.)
-        </p>
-        <div class="foto-container">
-            <p><i>(Espaço reservado para fotos de campo)</i></p>
+            <h1>Entre o Clima e a Cidade</h1>
+            <p>Análise multivariada de riscos climáticos em Fortaleza: superando a análise de dados isolados para criar inteligência geográfica.</p>
         </div>
 
-
-        <h2>Metodologia e Análise</h2>
-        <p>
-            O script ETL (<code>etl.py</code>) foi executado para processar e agregar todos os dados por regional. 
-            Os gráficos abaixo, gerados pelo Pandas/Matplotlib, resumem os principais fatores de risco.
-        </p>
-
-        <h2>Índice Ponderado de Risco</h2>
-        <p>
-            O índice ponderado agora inclui **Risco Geológico** e **Risco de Inundação**, com pesos definidos pela análise de correlação entre as variáveis. As regionais são classificadas como **Baixo**, **Médio** e **Alto** risco, com base nesse novo índice.
-        </p>
-
-        <div class="grafico-container">
-            <h3>Gráfico 1: Resultado Final (Cluster vs. Impacto)</h3>
-            <p>
-                Utilizamos um algoritmo de cluster (K-Means) para agrupar as regionais em 3 categorias de risco (Alto, Médio, Baixo) 
-                com base nos 4 fatores: Lixo, IDH, Risco Geográfico e Drenagem.
-            </p>
-            <p>
-                Este gráfico comprova a hipótese: as regionais que o modelo classificou como de "Alto Risco" (vermelho) 
-                são, de facto, as que tiveram o maior número de ocorrências de alagamento.
-            </p>
-            <img src="{{ url_for('static', filename='images/grafico_resultado_cluster.png') }}" alt="Gráfico de Resultado do Cluster">
-        </div>
-
-        <div class="grafico-container">
-            <h3>Gráfico 2: Análise de Correlação (Fatores de Risco vs. Impacto)</h3>
-            <p>
-                Analisamos a correlação de cada fator de risco com o número de alagamentos. A linha de tendência (regressão linear) 
-                ajuda a visualizar a força e a direção da relação.
-            </p>
+        <div class="section" id="investigacao">
+            <div class="section-title"><span>01</span> A Hipótese Inicial: O Lixo</div>
             
-            <h3 style="margin-top: 30px;">IDH vs. Alagamento</h3>
-            <p>
-                <b>Hipótese:</b> Regionais com menor IDH (mais vulneráveis) teriam mais alagamentos.
-                <br><b>Observação:</b> A linha de tendência descendente sugere que a relação existe: quanto maior o IDH, menor o número de alagamentos.
-            </p>
-            <img src="{{ url_for('static', filename='images/grafico_correlacao_idh.png') }}" alt="Gráfico de Correlação IDH vs Alagamento">
-            
-            <h3 style="margin-top: 30px;">Risco Geográfico vs. Alagamento</h3>
-            <p>
-                <b>Hipótese:</b> Regionais com maior porcentagem de área em zonas de risco (alagados) teriam mais alagamentos.
-                <br><b>Observação:</b> A linha de tendência ascendente mostra uma correlação positiva, como esperado.
-            </p>
-            <img src="{{ url_for('static', filename='images/grafico_correlacao_risco_geo.png') }}" alt="Gráfico de Correlação Risco Geográfico vs Alagamento">
-
-            <h3 style="margin-top: 30px;">Drenagem vs. Alagamento</h3>
-            <p>
-                <b>Hipótese:</b> Regionais com menor infraestrutura (menos Km de drenagem) teriam mais alagamentos.
-                <br><b>Observação:</b> A linha de tendência descendente confirma a hipótese: mais quilômetros de drenagem parecem estar associados a menos ocorrências de alagamento.
-            </p>
-            <img src="{{ url_for('static', filename='images/grafico_correlacao_drenagem.png') }}" alt="Gráfico de Correlação Drenagem vs Alagamento">
-            
-            <h3 style="margin-top: 30px;">Lixo vs. Alagamento</h3>
-            <p>
-                <b>Hipótese:</b> Regionais com mais demandas de lixo teriam mais alagamentos.
-                <br><b>Observação:</b> Esta é a correlação mais fraca. A linha de tendência é quase plana, 
-                confirmando a observação do especialista: o lixo, sozinho, não é um forte previsor do impacto, 
-                sendo necessário analisá-lo em conjunto com os outros fatores.
-            </p>
-            <img src="{{ url_for('static', filename='images/grafico_correlacao_lixo.png') }}" alt="Gráfico de Correlação Lixo vs Alagamento">
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <img src="{{ url_for('static', filename='images/grafico_correlacao_lixo.png') }}" alt="Correlação Lixo">
+                </div>
+                <div class="guide-card">
+                    <div class="guide-title">Guia de Leitura</div>
+                    
+                    <div class="insight-box">
+                        <span class="insight-label">O que vemos:</span>
+                        <p>Uma nuvem de pontos dispersa. Embora a linha pontilhada suba levemente, muitos pontos estão longe dela.</p>
+                    </div>
+                    
+                    <div class="insight-box">
+                        <span class="insight-label">Conclusão:</span>
+                        <p>O lixo é um problema, mas <b>não explica tudo</b>. Existem áreas com muito lixo que não alagam tanto, e áreas mais limpas que alagam. Precisávamos investigar mais fundo.</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <h3>Resultado Final: Índice Ponderado de Risco</h3>
-        <p>
-            Em vez de utilizar modelos automáticos de Machine Learning (como K-Means), 
-            que se mostraram instáveis e pouco coerentes com o impacto real dos alagamentos, 
-            adotamos um <b>Índice Ponderado Transparente</b>.
-        </p>
-
-        <p>
-            Este índice combina quatro fatores essenciais, com pesos definidos a partir 
-            da análise das correlações reais e da lógica de vulnerabilidade urbana:
-        </p>
-
-        <ul>
-            <li><b>40%</b> - Risco Geográfico (áreas naturalmente propensas a alagamento)</li>
-            <li><b>30%</b> - IDH invertido (vulnerabilidade socioeconômica)</li>
-            <li><b>20%</b> - Drenagem invertida (deficiência de infraestrutura)</li>
-            <li><b>10%</b> - Demandas de Lixo (pressão operacional)</li>
-        </ul>
-
-        <p>
-            O resultado é um modelo <b>explicável, coerente e defensável</b>, que reflete a 
-            realidade observada em campo e evita distorções causadas por algoritmos. 
-            O mapa interativo utiliza esse novo índice para classificar as regionais em:
-            <b>Baixo</b>, <b>Médio</b> e <b>Alto Risco</b>.
-        </p>
-
-        <img src="{{ url_for('static', filename='images/grafico_resultado_cluster.png') }}" 
-            alt="Gráfico de Índice Ponderado de Risco">
-
-
-        <h2>Próximo Passo: O Mapa Interativo</h2>
-        <p>
-            Para ver como todas essas variáveis, incluindo o **Cluster de Risco Combinado**, se comportam em cada Regional específica, acesse o <b>Mapa Interativo</b>.
-        </p>
-        <div class="nav" style="background-color: #f9f9f9;">
-             <a href="/mapa" style="color: #007bff; background-color: #e9f5ff; padding: 10px 20px; border-radius: 5px;">Acessar o Mapa</a>
+        <div class="section">
+            <div class="section-title"><span>02</span> A Causa Raiz: Risco Geológico</div>
+            
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <img src="{{ url_for('static', filename='images/grafico_correlacao_risco_geo.png') }}" alt="Correlação Risco Geo">
+                </div>
+                <div class="guide-card">
+                    <div class="guide-title">Guia de Leitura</div>
+                    
+                    <div class="insight-box">
+                        <span class="insight-label">O que vemos:</span>
+                        <p>Uma tendência muito mais clara e ascendente. Quando a % de área de risco geológico aumenta (eixo X), os alagamentos disparam.</p>
+                    </div>
+                    
+                    <div class="insight-box">
+                        <span class="insight-label">Conclusão:</span>
+                        <p>A topografia e o solo são determinantes. Baseado nisso, atribuímos um <b>peso maior (30%)</b> para esta variável no nosso modelo matemático.</p>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div class="section" id="validacao">
+            <div class="section-title"><span>03</span> A Prova Estatística (Heatmap)</div>
+            
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <img src="{{ url_for('static', filename='images/grafico_heatmap_correlacao.png') }}" class="heatmap-img" alt="Heatmap de Correlação">
+                </div>
+                <div class="guide-card">
+                    <div class="guide-title">Matriz de Correlação</div>
+                    
+                    <div class="insight-box">
+                        <span class="insight-label">Como ler este gráfico:</span>
+                        <p>Cores quentes (vermelho/laranja) indicam forte relação. Cores frias (azul) indicam relação fraca ou inversa.</p>
+                    </div>
+                    
+                    <div class="insight-box">
+                        <span class="insight-label">A Descoberta:</span>
+                        <p>Observe como a variável <b>Alagamento</b> tem uma cor mais quente quando cruzada com <b>Risco Geo</b> do que com outras variáveis. Isso valida matematicamente nossa decisão de criar um Índice Ponderado.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="solucao">
+            <div class="section-title"><span>04</span> O Resultado: Clusters de Risco</div>
+            
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <img src="{{ url_for('static', filename='images/grafico_resultado_cluster.png') }}" alt="Resultado Final">
+                </div>
+                <div class="guide-card" style="border-left-color: #d73027;">
+                    <div class="guide-title" style="color: #d73027;">O Modelo Funcionou?</div>
+                    
+                    <div class="insight-box">
+                        <span class="insight-label">A Resposta Visual:</span>
+                        <p>Sim. As barras vermelhas (classificadas como <b>Alto Risco</b> pelo nosso algoritmo) coincidem exatamente com as Regionais que tiveram os maiores picos de alagamento reais.</p>
+                    </div>
+                    
+                    <div class="insight-box">
+                        <span class="insight-label">O Produto "Predict":</span>
+                        <p>Transformamos essa matemática em alertas de texto automáticos no mapa. O sistema agora diz <b>o porquê</b> do risco, não apenas onde ele está.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 50px;">
+            <h3>Pronto para ver o sistema em ação?</h3>
+            <a href="/mapa" style="background: #e67e22; color: white; padding: 15px 30px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 1.2em; display: inline-block; margin-top: 10px;">
+                ACESSAR MAPA INTERATIVO
+            </a>
+        </div>
+
     </div>
+
+    <div class="footer">
+        <p>Projeto de Extensão Universitária em Big Data</p>
+        <p style="font-size: 0.8em; opacity: 0.7;">Desenvolvido com Python (Pandas/Geopandas) e Leaflet.js</p>
+    </div>
+
 </body>
 </html>
