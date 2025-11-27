@@ -1,4 +1,19 @@
-.venv/
+# --- Python (Arquivos temporários de execução) ---
 __pycache__/
 *.pyc
+
+# --- Ambientes Virtuais (PESADO - Nunca envie isso) ---
+.venv/
+venv/
+env/
+
+# --- Configurações da IDE (VS Code) ---
+.vscode/
+*.code-workspace
+
+# --- Sistema Operacional (Arquivos de lixo do Windows/Mac) ---
 .DS_Store
+Thumbs.db
+
+# --- Segurança (Segredos e Variáveis de Ambiente) ---
+.env
